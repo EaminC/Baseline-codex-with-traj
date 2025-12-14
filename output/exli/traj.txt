@@ -1,0 +1,605 @@
+OpenAI Codex v0.72.0 (research preview)
+--------
+workdir: /home/cc/tmp/exli
+model: gpt-5.1-codex-max
+provider: openai
+approval: never
+sandbox: danger-full-access
+reasoning effort: none
+reasoning summaries: auto
+session id: 019b1e3c-e78c-7f73-92a1-221e96ada976
+--------
+user
+Please take a careful look at the current hardware and repo, and create a new Dockerfile named codex.dockerfile at the root of this repo that, when built, puts me in a /bin/bash CLI setting at the root of the repository, with the repository installed.
+mcp startup: no servers
+
+thinking
+**Inspecting repository structure**
+exec
+/bin/bash -lc ls in /home/cc/tmp/exli succeeded in 21ms:
+Dockerfile
+LICENSE
+README.md
+REPRODUCE.md
+data
+jacoco-extension
+jars
+java
+poms
+python
+traj.txt
+
+thinking
+**Checking repo type via README**
+exec
+/bin/bash -lc 'cat README.md' in /home/cc/tmp/exli succeeded in 21ms:
+# ExLi
+Automatically extracting inline tests from unit tests and executing these inline tests with [itest][itest-url].
+
+## Introduction
+This repo contains the code and data for producing the experiments in [ExLi][paper-url].
+
+### Inline test format
+1. "Declare" part
+`itest`
+
+In our experiments, we use `itest(test_source, target_stmt_line_number)`, to represent the test source and the line number of the target statement in original file (note that after adding inline tests to the original file, the line numbers of target statements change).
+For example, `itest("randoop", 57)` means that the test source is Randoop generated tests, and the target statement starts at line 57 in the original file.
+
+2. "Assign" part
+`given(var, value)`
+
+3. "Assert" part
+`assert(var, value)`
+
+### Repo structure
+
+thinking
+**Reviewing existing Dockerfile**
+
+I'm checking the current Dockerfile to understand how to install the repo during build to create a new one at the root accordingly.
+exec
+/bin/bash -lc 'cat Dockerfile' in /home/cc/tmp/exli succeeded in 21ms:
+# docker build -t exli .
+# docker run -it exli /bin/bash
+
+# Pull base image
+FROM ubuntu:22.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install sofware properties common
+RUN apt-get update && \
+    apt-get install -y software-properties-common
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+RUN apt-get update && \
+    apt-get -qq -y install apt-utils curl wget unzip zip gcc mono-mcs sudo emacs vim less git build-essential pkg-config libicu-dev firefox
+RUN apt-get update && \
+    curl -L https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz | tar xz -C /usr/local/bin
+
+# Install miniconda
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+     /bin/bash ~/miniconda.sh -b -p /opt/conda
+
+thinking
+**Scoping new Dockerfile with repo install**
+
+I'm verifying repo install steps, focusing on the Python directory and prepare-conda-env script, to create a minimal Dockerfile that drops the user into a shell at the repo root with dependencies properly installed.
+exec
+/bin/bash -lc 'ls python' in /home/cc/tmp/exli succeeded in 21ms:
+exli
+prepare-conda-env.sh
+reproduce.sh
+setup.py
+
+thinking
+**Clarifying environment setup**
+
+Checking if there is a prepare-conda-env script or step needed for environment setup before proceeding.
+exec
+/bin/bash -lc "sed -n '1,200p' python/prepare-conda-env.sh" in /home/cc/tmp/exli succeeded in 22ms:
+#!/bin/bash
+# prepare a conda environment for developing exli
+
+_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+function prepare_conda_env() {
+        # the python version to use
+        local python_version=${1:-3.9}; shift
+        # the conda env name
+        local env_name=${1:-exli}; shift
+
+        echo ">>> Preparing conda environment \"${env_name}\", python_version=${python_version}"
+        
+        # Preparation
+        set -e
+        eval "$(conda shell.bash hook)"
+        conda env remove --name $env_name -y || true
+        conda create --name $env_name python=$python_version pip -y
+        conda activate $env_name
+        pip install --upgrade pip
+
+thinking
+**Checking Java install script**
+
+I'm verifying if the java/install.sh script handles the Java installation or requires additional setup like conda.
+exec
+/bin/bash -lc "sed -n '1,200p' java/install.sh" in /home/cc/tmp/exli succeeded in 22ms:
+#!/bin/bash
+_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+set -e
+
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk install java 8.0.302-open
+sdk use java 8.0.302-open
+sdk install maven 3.8.3
+sdk use maven 3.8.3
+
+( cd ${_DIR}/raninline
+  mvn install
+)
+
+thinking
+**Planning hardware inspection in Dockerfile**
+
+I'll check system details like CPU architecture and memory within the Dockerfile or build context to ensure compatibility, then create a multi-stage Dockerfile named codex.dockerfile that installs dependencies and starts a bash shell at the repo root with full repo access.
+exec
+/bin/bash -lc 'uname -a' in /home/cc/tmp/exli succeeded in 21ms:
+Linux eamin 5.4.0-198-generic #218-Ubuntu SMP Fri Sep 27 20:18:53 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux
+
+thinking
+**Checking system CPU info**
+exec
+/bin/bash -lc lscpu in /home/cc/tmp/exli succeeded in 70ms:
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Byte Order:                         Little Endian
+Address sizes:                      46 bits physical, 48 bits virtual
+CPU(s):                             48
+On-line CPU(s) list:                0-47
+Thread(s) per core:                 2
+Core(s) per socket:                 12
+Socket(s):                          2
+NUMA node(s):                       2
+Vendor ID:                          GenuineIntel
+CPU family:                         6
+Model:                              85
+Model name:                         Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz
+Stepping:                           4
+CPU MHz:                            1000.265
+CPU max MHz:                        3700.0000
+CPU min MHz:                        1000.0000
+BogoMIPS:                           5200.00
+Virtualization:                     VT-x
+
+thinking
+**Checking memory usage**
+exec
+/bin/bash -lc 'free -h' in /home/cc/tmp/exli succeeded in 23ms:
+              total        used        free      shared  buff/cache   available
+Mem:          187Gi       2.5Gi       109Gi       2.0Mi        74Gi       183Gi
+Swap:            0B          0B          0B
+
+thinking
+**Planning Dockerfile build strategy**
+
+I'm deciding to build the Docker image by copying the repo contents directly and setting the workdir at the repo root, ensuring dependencies for Python and Java are installed and defaulting to a bash shell there. I'm weighing using Miniconda or micromamba for environment setup, aiming for minimal base image and to run the existing conda-based install script.
+exec
+/bin/bash -lc "sed -n '1,200p' python/setup.py" in /home/cc/tmp/exli succeeded in 22ms:
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import codecs
+import os
+
+from setuptools import setup
+
+
+def read(fname):
+    file_path = os.path.join(os.path.dirname(__file__), fname)
+    return codecs.open(file_path, encoding="utf-8").read()
+
+
+setup(
+    name="exli-research",
+    version="0.1.0",
+    author="Yu Liu",
+    author_email="yuki.liu@utexas.edu",
+    maintainer="Yu Liu",
+
+
+thinking
+**Planning Dockerfile with conda and sdkman**
+
+Detailed plan covers Ubuntu 22.04 base, installing Miniconda with Python 3.9 env, creating non-root user, installing sdkman as user to get Java 8 and Maven, copying repo with proper ownership, running conda env setup script, running Java install script, setting environment variables and PATH for conda and sdkman, and ensuring default bash CLI at repo root with auto-activated conda env; also debating including Firefox and geckodriver for compatibility but leaning toward replicating original environment to avoid missing functionality.
+thinking
+**Finalizing Dockerfile content and creation plan**
+
+The Dockerfile fully implements the planned steps: installs necessary apt packages and geckodriver as root, adds non-root user and sets ownership, installs Miniconda then sdkman with Java 8 and Maven as user, copies repo with correct ownership, runs python conda env setup script, builds Java with install.sh, configures .bashrc for environment activation, and sets default CMD to bash at repo root. Next is creating this codex.dockerfile via apply_patch with the detailed content.
+file update
+A /home/cc/tmp/exli/codex.dockerfile
+# Build an ExLi image that drops into /bin/bash at the repo root with the
+# Python and Java tooling installed.
+FROM ubuntu:22.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        unzip \
+        zip \
+        build-essential \
+        pkg-config \
+        software-properties-common \
+        locales \
+        sudo \
+        vim \
+        less \
+        emacs \
+        mono-mcs \
+        firefox \
+        libicu-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Geckodriver is needed alongside Firefox for the existing tooling.
+RUN curl -L https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz \
+    | tar xz -C /usr/local/bin
+
+# Install Miniconda for Python tooling.
+ENV CONDA_DIR=/opt/conda
+RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh && \
+    $CONDA_DIR/bin/conda clean -afy
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+# Create a non-root user and hand ownership of conda over.
+RUN useradd -ms /bin/bash exli && \
+    echo "exli ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/exli && chmod 0440 /etc/sudoers.d/exli && \
+    chown -R exli:exli $CONDA_DIR
+
+USER exli
+WORKDIR /home/exli
+ENV HOME=/home/exli
+SHELL ["/bin/bash", "-lc"]
+
+# Install Java 8 and Maven via SDKMAN.
+ENV SDKMAN_DIR=/home/exli/.sdkman
+RUN curl -s "https://get.sdkman.io" | bash
+RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
+    sdk install java 8.0.302-open && \
+    sdk install maven 3.8.3
+
+ENV JAVA_HOME=/home/exli/.sdkman/candidates/java/current
+ENV PATH=/opt/conda/bin:/home/exli/.sdkman/candidates/java/current/bin:/home/exli/.sdkman/candidates/maven/current/bin:/home/exli/.sdkman/bin:$PATH
+
+# Bring the repository into the image.
+COPY --chown=exli:exli . /home/exli/exli
+WORKDIR /home/exli/exli
+
+# Set up the Python environment and install ExLi (editable with extras).
+RUN conda init bash && \
+    cd python && \
+    bash prepare-conda-env.sh 3.9 exli
+
+# Install the Java artifacts.
+RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
+    cd java && \
+    bash install.sh
+
+# Make sure the environment is ready when a shell starts.
+RUN echo "source $SDKMAN_DIR/bin/sdkman-init.sh" >> /home/exli/.bashrc && \
+    echo "conda activate exli" >> /home/exli/.bashrc
+
+CMD ["/bin/bash"]
+apply_patch(auto_approved=true) exited 0 in 14ms:
+Success. Updated the following files:
+A codex.dockerfile
+file update:
+diff --git a/codex.dockerfile b/codex.dockerfile
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e4e3cd267b54da0fcd0527a373dfa9c790ccd44
+--- /dev/null
++++ b/codex.dockerfile
+@@ -0,0 +1,77 @@
++# Build an ExLi image that drops into /bin/bash at the repo root with the
++# Python and Java tooling installed.
++FROM ubuntu:22.04
++ARG DEBIAN_FRONTEND=noninteractive
++
++RUN apt-get update && \
++    apt-get install -y --no-install-recommends \
++        ca-certificates \
++        curl \
++        wget \
++        git \
++        unzip \
++        zip \
++        build-essential \
++        pkg-config \
++        software-properties-common \
++        locales \
++        sudo \
++        vim \
++        less \
++        emacs \
++        mono-mcs \
++        firefox \
++        libicu-dev && \
++    rm -rf /var/lib/apt/lists/*
++
++# Geckodriver is needed alongside Firefox for the existing tooling.
++RUN curl -L https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz \
++    | tar xz -C /usr/local/bin
++
++# Install Miniconda for Python tooling.
++ENV CONDA_DIR=/opt/conda
++RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh && \
++    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
++    rm /tmp/miniconda.sh && \
++    $CONDA_DIR/bin/conda clean -afy
++ENV PATH=$CONDA_DIR/bin:$PATH
++
++# Create a non-root user and hand ownership of conda over.
++RUN useradd -ms /bin/bash exli && \
++    echo "exli ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/exli && chmod 0440 /etc/sudoers.d/exli && \
++    chown -R exli:exli $CONDA_DIR
++
++USER exli
++WORKDIR /home/exli
++ENV HOME=/home/exli
++SHELL ["/bin/bash", "-lc"]
++
++# Install Java 8 and Maven via SDKMAN.
++ENV SDKMAN_DIR=/home/exli/.sdkman
++RUN curl -s "https://get.sdkman.io" | bash
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    sdk install java 8.0.302-open && \
++    sdk install maven 3.8.3
++
++ENV JAVA_HOME=/home/exli/.sdkman/candidates/java/current
++ENV PATH=/opt/conda/bin:/home/exli/.sdkman/candidates/java/current/bin:/home/exli/.sdkman/candidates/maven/current/bin:/home/exli/.sdkman/bin:$PATH
++
++# Bring the repository into the image.
++COPY --chown=exli:exli . /home/exli/exli
++WORKDIR /home/exli/exli
++
++# Set up the Python environment and install ExLi (editable with extras).
++RUN conda init bash && \
++    cd python && \
++    bash prepare-conda-env.sh 3.9 exli
++
++# Install the Java artifacts.
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    cd java && \
++    bash install.sh
++
++# Make sure the environment is ready when a shell starts.
++RUN echo "source $SDKMAN_DIR/bin/sdkman-init.sh" >> /home/exli/.bashrc && \
++    echo "conda activate exli" >> /home/exli/.bashrc
++
++CMD ["/bin/bash"]
+
+
+thinking
+**Verifying instructions fulfillment**
+file update:
+diff --git a/codex.dockerfile b/codex.dockerfile
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e4e3cd267b54da0fcd0527a373dfa9c790ccd44
+--- /dev/null
++++ b/codex.dockerfile
+@@ -0,0 +1,77 @@
++# Build an ExLi image that drops into /bin/bash at the repo root with the
++# Python and Java tooling installed.
++FROM ubuntu:22.04
++ARG DEBIAN_FRONTEND=noninteractive
++
++RUN apt-get update && \
++    apt-get install -y --no-install-recommends \
++        ca-certificates \
++        curl \
++        wget \
++        git \
++        unzip \
++        zip \
++        build-essential \
++        pkg-config \
++        software-properties-common \
++        locales \
++        sudo \
++        vim \
++        less \
++        emacs \
++        mono-mcs \
++        firefox \
++        libicu-dev && \
++    rm -rf /var/lib/apt/lists/*
++
++# Geckodriver is needed alongside Firefox for the existing tooling.
++RUN curl -L https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz \
++    | tar xz -C /usr/local/bin
++
++# Install Miniconda for Python tooling.
++ENV CONDA_DIR=/opt/conda
++RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh && \
++    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
++    rm /tmp/miniconda.sh && \
++    $CONDA_DIR/bin/conda clean -afy
++ENV PATH=$CONDA_DIR/bin:$PATH
++
++# Create a non-root user and hand ownership of conda over.
++RUN useradd -ms /bin/bash exli && \
++    echo "exli ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/exli && chmod 0440 /etc/sudoers.d/exli && \
++    chown -R exli:exli $CONDA_DIR
++
++USER exli
++WORKDIR /home/exli
++ENV HOME=/home/exli
++SHELL ["/bin/bash", "-lc"]
++
++# Install Java 8 and Maven via SDKMAN.
++ENV SDKMAN_DIR=/home/exli/.sdkman
++RUN curl -s "https://get.sdkman.io" | bash
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    sdk install java 8.0.302-open && \
++    sdk install maven 3.8.3
++
++ENV JAVA_HOME=/home/exli/.sdkman/candidates/java/current
++ENV PATH=/opt/conda/bin:/home/exli/.sdkman/candidates/java/current/bin:/home/exli/.sdkman/candidates/maven/current/bin:/home/exli/.sdkman/bin:$PATH
++
++# Bring the repository into the image.
++COPY --chown=exli:exli . /home/exli/exli
++WORKDIR /home/exli/exli
++
++# Set up the Python environment and install ExLi (editable with extras).
++RUN conda init bash && \
++    cd python && \
++    bash prepare-conda-env.sh 3.9 exli
++
++# Install the Java artifacts.
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    cd java && \
++    bash install.sh
++
++# Make sure the environment is ready when a shell starts.
++RUN echo "source $SDKMAN_DIR/bin/sdkman-init.sh" >> /home/exli/.bashrc && \
++    echo "conda activate exli" >> /home/exli/.bashrc
++
++CMD ["/bin/bash"]
+
+exec
+/bin/bash -lc 'cat codex.dockerfile' in /home/cc/tmp/exli succeeded in 20ms:
+# Build an ExLi image that drops into /bin/bash at the repo root with the
+# Python and Java tooling installed.
+FROM ubuntu:22.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        unzip \
+        zip \
+        build-essential \
+        pkg-config \
+        software-properties-common \
+        locales \
+        sudo \
+        vim \
+        less \
+
+thinking
+**Dockerfile added with environment setup**
+
+Created a `codex.dockerfile` that builds a container using Ubuntu 22.04, installs dependencies, sets up a conda environment `exli` via `python/prepare-conda-env.sh`, installs Java 8 and Maven with sdkman plus `java/install.sh`, sets the repo root as the working directory, and defaults to an activated bash shell. The hardware has x86_64 architecture with 48 vCPUs and 187 GiB memory.  
+
+Next steps: build and test the container with  
+```bash
+docker build -f codex.dockerfile -t exli-dev .
+docker run -it exli-dev
+```
+codex
+New `codex.dockerfile` builds an Ubuntu 22.04 image that installs Firefox + geckodriver, Miniconda (env `exli` via `python/prepare-conda-env.sh`), SDKMAN-managed Java 8 + Maven, runs `java/install.sh`, copies the repo, sets the workdir to the repo root, and drops into `/bin/bash` with the conda env auto-activated. 
+
+Hardware check: x86_64, 48 vCPUs (Xeon Gold 6126), ~187GiB RAM, Ubuntu 5.4 kernel—plenty for the build.
+
+Next steps: `docker build -f codex.dockerfile -t exli-dev .` then `docker run -it exli-dev`.
+file update:
+diff --git a/codex.dockerfile b/codex.dockerfile
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e4e3cd267b54da0fcd0527a373dfa9c790ccd44
+--- /dev/null
++++ b/codex.dockerfile
+@@ -0,0 +1,77 @@
++# Build an ExLi image that drops into /bin/bash at the repo root with the
++# Python and Java tooling installed.
++FROM ubuntu:22.04
++ARG DEBIAN_FRONTEND=noninteractive
++
++RUN apt-get update && \
++    apt-get install -y --no-install-recommends \
++        ca-certificates \
++        curl \
++        wget \
++        git \
++        unzip \
++        zip \
++        build-essential \
++        pkg-config \
++        software-properties-common \
++        locales \
++        sudo \
++        vim \
++        less \
++        emacs \
++        mono-mcs \
++        firefox \
++        libicu-dev && \
++    rm -rf /var/lib/apt/lists/*
++
++# Geckodriver is needed alongside Firefox for the existing tooling.
++RUN curl -L https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz \
++    | tar xz -C /usr/local/bin
++
++# Install Miniconda for Python tooling.
++ENV CONDA_DIR=/opt/conda
++RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh && \
++    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
++    rm /tmp/miniconda.sh && \
++    $CONDA_DIR/bin/conda clean -afy
++ENV PATH=$CONDA_DIR/bin:$PATH
++
++# Create a non-root user and hand ownership of conda over.
++RUN useradd -ms /bin/bash exli && \
++    echo "exli ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/exli && chmod 0440 /etc/sudoers.d/exli && \
++    chown -R exli:exli $CONDA_DIR
++
++USER exli
++WORKDIR /home/exli
++ENV HOME=/home/exli
++SHELL ["/bin/bash", "-lc"]
++
++# Install Java 8 and Maven via SDKMAN.
++ENV SDKMAN_DIR=/home/exli/.sdkman
++RUN curl -s "https://get.sdkman.io" | bash
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    sdk install java 8.0.302-open && \
++    sdk install maven 3.8.3
++
++ENV JAVA_HOME=/home/exli/.sdkman/candidates/java/current
++ENV PATH=/opt/conda/bin:/home/exli/.sdkman/candidates/java/current/bin:/home/exli/.sdkman/candidates/maven/current/bin:/home/exli/.sdkman/bin:$PATH
++
++# Bring the repository into the image.
++COPY --chown=exli:exli . /home/exli/exli
++WORKDIR /home/exli/exli
++
++# Set up the Python environment and install ExLi (editable with extras).
++RUN conda init bash && \
++    cd python && \
++    bash prepare-conda-env.sh 3.9 exli
++
++# Install the Java artifacts.
++RUN source "$SDKMAN_DIR/bin/sdkman-init.sh" && \
++    cd java && \
++    bash install.sh
++
++# Make sure the environment is ready when a shell starts.
++RUN echo "source $SDKMAN_DIR/bin/sdkman-init.sh" >> /home/exli/.bashrc && \
++    echo "conda activate exli" >> /home/exli/.bashrc
++
++CMD ["/bin/bash"]
+
+tokens used
+62,673
+New `codex.dockerfile` builds an Ubuntu 22.04 image that installs Firefox + geckodriver, Miniconda (env `exli` via `python/prepare-conda-env.sh`), SDKMAN-managed Java 8 + Maven, runs `java/install.sh`, copies the repo, sets the workdir to the repo root, and drops into `/bin/bash` with the conda env auto-activated. 
+
+Hardware check: x86_64, 48 vCPUs (Xeon Gold 6126), ~187GiB RAM, Ubuntu 5.4 kernel—plenty for the build.
+
+Next steps: `docker build -f codex.dockerfile -t exli-dev .` then `docker run -it exli-dev`.
