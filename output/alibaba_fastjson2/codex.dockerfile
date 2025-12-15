@@ -1,10 +1,15 @@
-FROM maven:3.9.9-eclipse-temurin-17
+FROM openjdk:17
 
-WORKDIR /workspace/alibaba_fastjson2
+WORKDIR /workdir
 
-COPY . .
+# Copy all files
+COPY . /workdir
 
-# Install the project into the local Maven repo without running tests to keep the image slim.
-RUN mvn --batch-mode -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip=true install
+# Make the Maven wrapper executable
+RUN chmod +x ./mvnw
 
+# Run Maven install to build and install the project
+RUN ./mvnw install -DskipTests
+
+# Start a bash shell in the workdir by default
 CMD ["/bin/bash"]

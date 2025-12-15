@@ -1,33 +1,28 @@
-# syntax=docker/dockerfile:1
-FROM python:3.11-slim
+FROM openjdk:17-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install Python3, pip, and Maven
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    maven \
+    bash \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       bash \
-       ca-certificates \
-       curl \
-       git \
-       openjdk-17-jdk \
-       maven \
-    && rm -rf /var/lib/apt/lists/*
+# Install pytest Python package
+RUN pip3 install pytest
 
-# Make Java and Maven available and prefer bash for shells.
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
-SHELL ["/bin/bash", "-c"]
+# Set working directory
+WORKDIR /app
 
-WORKDIR /workspace/gluetest
+# Copy all repo files
+COPY . /app
 
-# Copy repository contents into the image.
-COPY . .
+# Build and install Maven modules
+RUN mvn -f commons-cli/pom.xml install
+RUN mvn -f commons-cli-graal/pom.xml install
+RUN mvn -f commons-csv/pom.xml install
+RUN mvn -f commons-csv-graal/pom.xml install
+RUN mvn -f graal-glue-generator/pom.xml install
 
-# Python tooling for running the translated test suites.
-RUN pip install --no-cache-dir pytest
-
-# Ensure translated sources are on the module search path.
-ENV PYTHONPATH=/workspace/gluetest/commons-cli-python/src:/workspace/gluetest/commons-csv-python/src
-
-# Drop into a shell at container start.
+# Default to bash shell
 CMD ["/bin/bash"]

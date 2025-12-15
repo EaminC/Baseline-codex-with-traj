@@ -1,8 +1,10 @@
 {
   "repo_name": "iamkun_dayjs",
   "repo_url": "https://github.com/iamkun/dayjs",
-  "execution_start_time": "2025-12-14T19:27:57Z",
-  "execution_end_time": "2025-12-14T19:28:13Z",
-  "execution_duration_seconds": 15.38,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:56:18Z",
+  "execution_end_time": "2025-12-15T05:56:45Z",
+  "execution_duration_seconds": 27.39,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

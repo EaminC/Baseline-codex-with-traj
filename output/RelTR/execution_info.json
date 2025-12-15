@@ -1,8 +1,10 @@
 {
   "repo_name": "RelTR",
   "repo_url": "https://github.com/yrcong/RelTR",
-  "execution_start_time": "2025-12-14T18:52:26Z",
-  "execution_end_time": "2025-12-14T18:53:33Z",
-  "execution_duration_seconds": 67.44,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:35:36Z",
+  "execution_end_time": "2025-12-15T05:36:10Z",
+  "execution_duration_seconds": 33.72,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

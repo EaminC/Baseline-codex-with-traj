@@ -1,12 +1,16 @@
-FROM rust:1.78-bullseye
+FROM rust:1.74
 
-ENV CARGO_TERM_COLOR=always
+# Create app directory
+WORKDIR /app
 
-WORKDIR /workspace
-
+# Copy the entire repo into the container
 COPY . .
 
-RUN cargo fetch --locked \
- && cargo build --locked
+# Build the entire workspace to install dependencies and compile
+RUN cargo build --release
 
+# Set the default working directory on container start
+WORKDIR /app
+
+# Default command to run bash shell
 CMD ["/bin/bash"]

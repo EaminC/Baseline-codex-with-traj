@@ -1,23 +1,13 @@
-FROM rust:1-bookworm
+FROM rust:1.72-bullseye
 
-WORKDIR /usr/src/tracing
+# Create app directory
+WORKDIR /app
 
-# Build tooling and common native dependencies used by the workspace.
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      build-essential \
-      pkg-config \
-      ca-certificates \
-      git \
-      libssl-dev \
-      libclang-dev \
-      cmake \
-    && rm -rf /var/lib/apt/lists/*
-
+# Copy entire repository
 COPY . .
 
-# Pre-fetch and compile the full workspace so the image is ready to develop or test.
-RUN cargo fetch && cargo build --workspace --all-targets
+# Build the workspace to cache dependencies
+RUN cargo build --release
 
-# Drop into the repository root when the container starts.
+# Default command to start bash shell
 CMD ["/bin/bash"]

@@ -1,8 +1,10 @@
 {
   "repo_name": "mockito_mockito",
   "repo_url": "https://github.com/mockito/mockito",
-  "execution_start_time": "2025-12-14T19:26:12Z",
-  "execution_end_time": "2025-12-14T19:26:45Z",
-  "execution_duration_seconds": 32.64,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:54:30Z",
+  "execution_end_time": "2025-12-15T05:54:55Z",
+  "execution_duration_seconds": 24.95,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

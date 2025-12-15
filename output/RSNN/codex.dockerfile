@@ -1,26 +1,21 @@
-FROM python:3.10-slim
+FROM python:3.13-slim
 
-ARG WORKDIR=/workspace/RSNN
+# Set working directory
+WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=${WORKDIR}
+# Copy requirements
+COPY requirements.txt /app/
 
-WORKDIR ${WORKDIR}
-
+# Install system dependencies if needed, then python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     git \
-    libatlas-base-dev \
-    libhdf5-dev \
-    libsndfile1 \
-    && rm -rf /var/lib/apt/lists/*
+ && pip install --no-cache-dir -r requirements.txt \
+ && apt-get remove -y git \
+ && apt-get autoremove -y \
+ && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Copy entire repo content
+COPY . /app
 
-COPY . .
-
+# Default command: bash shell
 CMD ["/bin/bash"]

@@ -1,24 +1,37 @@
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
-ARG DEBIAN_FRONTEND=noninteractive
+# Set noninteractive mode for apt
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     build-essential \
-    ca-certificates \
     cmake \
     ninja-build \
-  && rm -rf /var/lib/apt/lists/*
+    git \
+    ca-certificates \
+    curl \
+    python3 \
+    python3-pip \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/fmt
+# Set working directory
+WORKDIR /fmtlib_fmt
 
-COPY . .
+# Copy entire repo
+COPY . /fmtlib_fmt
 
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFMT_TEST=OFF \
-  && cmake --build build --parallel \
-  && cmake --install build \
-  && rm -rf build
+# Create build directory
+RUN mkdir build
+WORKDIR /fmtlib_fmt/build
 
-ENV LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+# Run cmake and build
+RUN cmake -GNinja .. && ninja && ninja install
 
-CMD ["/bin/bash"]
+# Set working directory back to repo root
+WORKDIR /fmtlib_fmt
+
+# Start bash shell
+ENTRYPOINT ["/bin/bash"]

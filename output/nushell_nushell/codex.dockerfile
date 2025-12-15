@@ -1,28 +1,25 @@
-FROM rust:1.90-bookworm
+FROM rust:latest
 
-ARG DEBIAN_FRONTEND=noninteractive
+# Create a new user to avoid running as root
+RUN useradd -m nushelluser
 
-# System packages needed for native builds (openssl, git bindings, pkg-config, clang) and TLS support.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        pkg-config \
-        libssl-dev \
-        libgit2-dev \
-        libssh2-1-dev \
-        clang \
-        cmake \
-    && rm -rf /var/lib/apt/lists/*
-
+# Create app directory and set as workdir
 WORKDIR /usr/src/nushell
 
+# Copy the entire repo into the container
 COPY . .
 
-# Build and install Nushell from this checkout using the locked dependency set.
-RUN cargo install --locked --path . --root /usr/local \
-    && cargo clean
+# Install required dependencies for building (if any)
+# We rely on cargo and Rust from rust official image, no extra deps needed
 
-ENV PATH="/usr/local/bin:${PATH}"
+# Build and install nushell using cargo
+RUN cargo install --path . --locked
 
-# Drop into an interactive shell at the repository root by default.
+# Change to non-root user
+USER nushelluser
+
+# Set workdir for the shell
+WORKDIR /usr/src/nushell
+
+# Start bash shell by default
 CMD ["/bin/bash"]

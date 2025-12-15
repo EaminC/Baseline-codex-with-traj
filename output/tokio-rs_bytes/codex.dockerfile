@@ -1,24 +1,14 @@
-FROM rust:1-bullseye
+FROM rust:slim
 
-# Build dependencies commonly needed by Rust projects.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        pkg-config \
-        ca-certificates \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /usr/src/app
 
-# Work out of the repository root.
-WORKDIR /workspace
+# Copy the manifest and lock files
+COPY Cargo.toml Cargo.lock* ./
 
-# Prime the dependency cache.
-COPY Cargo.toml Cargo.lock ./
-RUN cargo fetch --locked
+# Copy source code
+COPY src ./src
 
-# Copy the full source and build so the crate is ready to use.
-COPY . .
-RUN cargo build --locked --all-features
+# Build the project
+RUN cargo build --release
 
-# Drop into a bash shell at the repository root.
 CMD ["/bin/bash"]

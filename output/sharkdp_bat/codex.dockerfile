@@ -1,22 +1,13 @@
-FROM rust:1-bookworm
+FROM rust:latest
 
-SHELL ["/bin/bash", "-c"]
-
+# Set working directory
 WORKDIR /app
 
+# Copy source code
 COPY . /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        cmake \
-        libssl-dev \
-        pkg-config \
-    && rm -rf /var/lib/apt/lists/* \
-    && cargo install --locked --path . \
-    && bat --version
+# Build and install bat using cargo
+RUN cargo install --path . --locked
 
-ENV PATH="/usr/local/cargo/bin:${PATH}"
-
+# Set default shell
 CMD ["/bin/bash"]

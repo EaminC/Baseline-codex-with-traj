@@ -6,26 +6,27 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+ && apt-get install -y \
       build-essential \
       autoconf \
-      automake \
       libtool \
-      pkg-config \
-      flex \
-      bison \
-      python3 \
-      ca-certificates \
       git \
+      bash \
+ && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/jq
-COPY . /workspace/jq
+WORKDIR /src
+COPY . /src
 
 RUN autoreconf -i \
- && ./configure --with-oniguruma=builtin \
- && make -j"$(nproc)" \
- && make check \
- && make install
+ && ./configure \
+      --disable-docs \
+      --with-oniguruma=builtin \
+      --enable-static \
+      --enable-all-static \
+      --prefix=/usr/local \
+ && make -j$(nproc) \
+ && make install-strip
 
-CMD ["/bin/bash"]
+WORKDIR /src
+ENTRYPOINT ["/bin/bash"]

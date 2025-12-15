@@ -1,22 +1,19 @@
-FROM python:3.10-slim
+FROM python:3.12-slim-bullseye
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-WORKDIR /workspace/TabPFN
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
-        build-essential \
+# Install git and system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+# Set working directory
+WORKDIR /app
 
-RUN pip install --upgrade pip setuptools wheel \
-    && pip install .
+# Copy the entire repo into the container
+COPY . /app
 
+# Install the repo in editable mode (dev mode)
+RUN pip install --no-cache-dir -e .
+
+# Default command: bash shell
 CMD ["/bin/bash"]

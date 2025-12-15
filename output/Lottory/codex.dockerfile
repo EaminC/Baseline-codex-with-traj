@@ -1,22 +1,22 @@
-FROM python:3.7-slim
+FROM python:3.7-buster
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
+# Install OS dependencies and clean cached files
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential \
+        bash \
+        ca-certificates \
         git \
-        libglib2.0-0 \
-        libgl1 && \
+        wget && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/Lottory
+# Set working directory
+WORKDIR /Lottory
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Copy entire repo contents
+COPY . /Lottory
 
-COPY . .
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Default to bash shell at container start
 CMD ["/bin/bash"]

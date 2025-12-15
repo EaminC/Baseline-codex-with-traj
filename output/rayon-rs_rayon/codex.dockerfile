@@ -1,30 +1,13 @@
-FROM rust:1.80-bookworm
+FROM rust:latest
 
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+# Create app directory in container
+WORKDIR /app
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      build-essential \
-      pkg-config \
-      ca-certificates \
-      libx11-dev \
-      libxi-dev \
-      libxrandr-dev \
-      libxinerama-dev \
-      libxcursor-dev \
-      libgl1-mesa-dev \
-      libosmesa6-dev \
-      libwayland-dev \
-      libxkbcommon-dev \
-      libudev-dev \
- && rm -rf /var/lib/apt/lists/*
+# Copy everything from current directory to container
+COPY . /app
 
-WORKDIR /workspace/rayon
+# Build the Rust workspace
+RUN cargo build --release
 
-COPY . .
-
-RUN cargo fetch
-
-RUN cargo build --workspace --all-targets
-
+# Start a bash shell
 CMD ["/bin/bash"]

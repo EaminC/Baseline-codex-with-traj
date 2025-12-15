@@ -1,20 +1,12 @@
-FROM golang:1.21-bookworm
+FROM golang:1.21-bullseye
 
-ENV GO111MODULE=on \
-    CGO_ENABLED=1
+WORKDIR /go-zero
 
-WORKDIR /workspace/go-zero
+# Copy entire repo
+COPY . /go-zero
 
-# Minimal tools to resolve modules from VCS.
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Cache module downloads separately from source copy.
-COPY go.mod go.sum ./
+# Download dependencies
 RUN go mod download
 
-COPY . .
-
-# Build and install all provided binaries into the image.
-RUN go install ./...
-
+# Default to an interactive bash shell
 CMD ["/bin/bash"]

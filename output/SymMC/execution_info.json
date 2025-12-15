@@ -1,8 +1,10 @@
 {
   "repo_name": "SymMC",
   "repo_url": "https://github.com/wenxiwang/SymMC-Tool",
-  "execution_start_time": "2025-12-14T18:59:37Z",
-  "execution_end_time": "2025-12-14T19:00:34Z",
-  "execution_duration_seconds": 56.87,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:39:16Z",
+  "execution_end_time": "2025-12-15T05:39:42Z",
+  "execution_duration_seconds": 25.30,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

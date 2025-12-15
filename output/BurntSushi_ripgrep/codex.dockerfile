@@ -1,20 +1,18 @@
-FROM rust:1-bookworm
+FROM rust:1.85
 
-# Build dependencies for ripgrep (PCRE2 support, build tooling).
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-    build-essential \
-    pkg-config \
-    libpcre2-dev \
-    ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# Install prerequisite packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    zsh xz-utils liblz4-tool musl-tools brotli zstd g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-COPY . /app
+# Set workdir to repo root
+WORKDIR /usr/src/ripgrep
 
-# Build and install ripgrep with PCRE2 enabled.
-RUN cargo build --release --locked --features pcre2 \
-  && cargo install --path . --locked --features pcre2
+# Copy repo into image
+COPY . .
 
-ENV PATH="/usr/local/cargo/bin:${PATH}"
+# Build release binary
+RUN cargo build --release
+
+# Default to bash shell at repo root
 CMD ["/bin/bash"]

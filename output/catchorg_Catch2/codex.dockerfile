@@ -1,22 +1,32 @@
 FROM ubuntu:22.04
 
+# Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        ninja-build \
-        git \
-        ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    python3 \
+    python3-pip \
+    git \
+    && python3 -m pip install --no-cache-dir conan \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/catchorg_Catch2
+# Set working directory
+WORKDIR /catch2
 
-COPY . .
+# Copy repo files into container
+COPY . /catch2
 
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCATCH_BUILD_TESTING=OFF && \
+# Configure conan and build
+RUN conan profile new default --detect || true && \
+    conan profile update settings.compiler.libcxx=libstdc++11 default && \
+    conan install . --build=missing && \
+    cmake -B build -S . && \
     cmake --build build && \
     cmake --install build
 
+# Default to bash shell
 CMD ["/bin/bash"]

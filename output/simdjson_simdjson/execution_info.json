@@ -1,8 +1,10 @@
 {
   "repo_name": "simdjson_simdjson",
   "repo_url": "https://github.com/simdjson/simdjson",
-  "execution_start_time": "2025-12-14T19:20:49Z",
-  "execution_end_time": "2025-12-14T19:21:35Z",
-  "execution_duration_seconds": 45.70,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:51:07Z",
+  "execution_end_time": "2025-12-15T05:51:30Z",
+  "execution_duration_seconds": 23.24,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

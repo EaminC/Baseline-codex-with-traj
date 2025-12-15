@@ -1,8 +1,10 @@
 {
   "repo_name": "Kong_insomnia",
   "repo_url": "https://github.com/Kong/insomnia",
-  "execution_start_time": "2025-12-14T19:28:19Z",
-  "execution_end_time": "2025-12-14T19:29:42Z",
-  "execution_duration_seconds": 82.58,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:56:54Z",
+  "execution_end_time": "2025-12-15T05:57:12Z",
+  "execution_duration_seconds": 18.20,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

@@ -1,43 +1,33 @@
-FROM python:3.8-slim
+FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 
+# Set environment variables for python
 ENV DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /workspace/RelTR
-
-# System build tools and lightweight image/video libraries for deps like pycocotools and matplotlib
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
+# Install required apt dependencies
+RUN apt-get update && apt-get install -y \
+    python3.6 \
+    python3-pip \
+    python3.6-dev \
     git \
-    libgl1 \
-    ffmpeg \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Core Python deps (CPU-only PyTorch 1.6 per project README)
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-    torch==1.6.0 \
-    torchvision==0.7.0 \
-    -f https://download.pytorch.org/whl/cpu/torch_stable.html
+# Set python3.6 as default python
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
 
-# Remaining Python stack
-RUN pip install --no-cache-dir \
-    cython \
-    numpy \
-    scipy \
-    matplotlib \
-    Pillow \
-    tqdm \
-    pycocotools
+# Upgrade pip
+RUN python -m pip install --upgrade pip
 
-# Copy project into container
-COPY . .
+# Copy current repo to /RelTR
+WORKDIR /RelTR
+COPY . /RelTR
 
-# Ensure in-repo imports resolve without installing a wheel
-ENV PYTHONPATH=/workspace/RelTR
+# Install python dependencies
+RUN pip install matplotlib scipy
+RUN pip install -U 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 
-# Build the Cython box intersection extension
-RUN cd lib/fpn && ./make.sh
+# Build the code computing box intersection native extension
+RUN cd lib/fpn && sh make.sh
 
-# Default to an interactive shell at the repo root
+# Default to bash shell
 CMD ["/bin/bash"]

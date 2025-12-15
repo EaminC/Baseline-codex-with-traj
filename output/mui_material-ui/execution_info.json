@@ -1,8 +1,10 @@
 {
   "repo_name": "mui_material-ui",
   "repo_url": "https://github.com/mui/material-ui",
-  "execution_start_time": "2025-12-14T19:40:02Z",
-  "execution_end_time": "2025-12-14T19:40:41Z",
-  "execution_duration_seconds": 39.30,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T06:03:07Z",
+  "execution_end_time": "2025-12-15T06:03:44Z",
+  "execution_duration_seconds": 37.90,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

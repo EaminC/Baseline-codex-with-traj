@@ -1,23 +1,22 @@
-FROM ubuntu:22.04
+FROM ubuntu:latest
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install build dependencies
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential cmake ninja-build meson pkg-config \
+    python3 python3-pip git curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    ninja-build \
-    pkg-config \
-    python3 \
- && rm -rf /var/lib/apt/lists/*
+# Set workdir
+WORKDIR /work
 
-WORKDIR /opt/zstd
-COPY . .
+# Copy repo contents
+COPY . /work
 
-RUN set -eux; \
-    make -j"$(nproc)"; \
-    make install; \
-    ldconfig
+# Build and install
+RUN make && make install
 
-WORKDIR /opt/zstd
+# Default shell
 ENTRYPOINT ["/bin/bash"]
+CMD ["-l"]

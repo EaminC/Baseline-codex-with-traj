@@ -1,28 +1,28 @@
-# Lightweight dev image for simdjson: builds & installs the library, then drops
-# you into /workspace/simdjson with bash.
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
+# Set environment variables for non-interactive installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        cmake \
-        ninja-build \
-        python3 \
-        pkg-config \
-        ca-certificates \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+# Install build tools and dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    nano \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/simdjson
+# Set working directory in container
+WORKDIR /simdjson_simdjson
 
-# Copy the repository into the image.
-COPY . .
+# Copy all repo files to container
+COPY . /simdjson_simdjson/
 
-# Configure, build, and install simdjson system-wide.
-RUN cmake -S . -B build -G Ninja -D CMAKE_BUILD_TYPE=Release \
-    && cmake --build build --target install
+# Create build dir and build project
+RUN mkdir build && cd build && \
+    cmake -DBUILD_SHARED_LIBS=OFF -DSIMDJSON_IMPLEMENTATION=icelake;haswell;westmere;fallback .. && \
+    make -j$(nproc)
 
-# Default to an interactive shell at the repo root.
+# Default to bash shell at repo root
 CMD ["/bin/bash"]

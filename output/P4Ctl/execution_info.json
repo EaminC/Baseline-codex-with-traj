@@ -1,8 +1,10 @@
 {
   "repo_name": "P4Ctl",
   "repo_url": "https://github.com/peng-gao-lab/p4control",
-  "execution_start_time": "2025-12-14T18:56:02Z",
-  "execution_end_time": "2025-12-14T18:57:15Z",
-  "execution_duration_seconds": 73.72,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:38:05Z",
+  "execution_end_time": "2025-12-15T05:38:30Z",
+  "execution_duration_seconds": 24.19,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

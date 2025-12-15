@@ -1,26 +1,21 @@
 FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install dependencies
+RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
-    ninja-build \
     git \
-    pkg-config \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
+# Set working directory in container
 WORKDIR /nlohmann_json
 
+# Copy repository contents into container
 COPY . /nlohmann_json
 
-RUN cmake -S . -B build -GNinja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DJSON_BuildTests=OFF \
-    -DNLOHMANN_JSON_INSTALL=ON \
- && cmake --build build \
- && cmake --install build \
- && rm -rf build
+# Create build directory and build the project
+RUN mkdir -p build && cd build && cmake .. && cmake --build .
 
+# Start with bash shell at repo root
 CMD ["/bin/bash"]

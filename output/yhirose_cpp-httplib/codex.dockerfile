@@ -1,26 +1,33 @@
 FROM ubuntu:22.04
 
+# Avoid interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Build tooling and common deps for the library (including OpenSSL support).
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install essential build tools and dependencies
+RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
-    ninja-build \
-    pkg-config \
-    libssl-dev \
-    ca-certificates \
     git \
-    python3 \
-    && rm -rf /var/lib/apt/lists/*
+    libssl-dev \
+    zlib1g-dev \
+    libcurl4-openssl-dev \
+    pkg-config \
+    ca-certificates \
+    curl \
+    nano \
+    bash \
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy the repository into the image and build/install it.
-WORKDIR /opt/httplib/src
-COPY . .
-RUN cmake -S . -B /opt/httplib/build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /opt/httplib/build --parallel \
-    && cmake --install /opt/httplib/build
+# Set working directory to the repo root
+WORKDIR /app
 
-# Drop into a shell at the repo root when the container starts.
-WORKDIR /opt/httplib/src
+# Copy all repo files into container
+COPY . /app
+
+# Build and install the project
+RUN mkdir -p build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    cmake --build . --target install
+
+# Set shell to bash and start at repo root
 CMD ["/bin/bash"]

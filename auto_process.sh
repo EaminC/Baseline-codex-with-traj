@@ -65,6 +65,9 @@ mkdir -p output
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Set default model to gpt-4.1-mini (override any config file defaults)
+export CODEX_MODEL="gpt-4.1-mini"
+
 # Process each repository
 for entry in "${repos[@]}"; do
   name=$(echo "$entry" | cut -d '|' -f 1)
@@ -101,7 +104,7 @@ for entry in "${repos[@]}"; do
   EXEC_START_TIME=$(date +%s.%N)
   EXEC_START_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   
-  codex -m gpt-4.1-mini exec --yolo "Please take a careful look at the current hardware and repo, and create a new Dockerfile named codex.dockerfile at the root of this repo that, when built, puts me in a /bin/bash CLI setting at the root of the repository, with the repository installed." > traj.txt 2>&1
+  codex -m gpt-4.1-mini -c model="gpt-4.1-mini" exec --yolo "Please take a careful look at the current hardware and repo, and create a new Dockerfile named codex.dockerfile at the root of this repo that, when built, puts me in a /bin/bash CLI setting at the root of the repository, with the repository installed." > traj.txt 2>&1
   
   # Record end time
   EXEC_END_TIME=$(date +%s.%N)
@@ -129,8 +132,14 @@ for entry in "${repos[@]}"; do
     echo "[MOVE] Moved codex.dockerfile to $OUTPUT_DIR/"
   fi
   
-  # Move traj.txt
+  # Extract actual model used from traj.txt (before moving it)
+  ACTUAL_MODEL="unknown"
   if [ -f "traj.txt" ]; then
+    # Extract model name from traj.txt (format: "model: gpt-5")
+    MODEL_LINE=$(grep -m 1 "^model:" traj.txt 2>/dev/null || echo "")
+    if [ -n "$MODEL_LINE" ]; then
+      ACTUAL_MODEL=$(echo "$MODEL_LINE" | sed 's/^model:[[:space:]]*//' | tr -d '\r\n')
+    fi
     mv traj.txt "$OUTPUT_DIR/"
     echo "[MOVE] Moved traj.txt to $OUTPUT_DIR/"
   fi
@@ -145,7 +154,9 @@ for entry in "${repos[@]}"; do
   "execution_start_time": "$EXEC_START_ISO",
   "execution_end_time": "$EXEC_END_ISO",
   "execution_duration_seconds": $EXEC_DURATION_ROUNDED,
-  "codex_command_success": $CODEX_SUCCESS
+  "codex_command_success": $CODEX_SUCCESS,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "$ACTUAL_MODEL"
 }
 EOF
   echo "[INFO] Created execution_info.json with execution time: ${EXEC_DURATION_ROUNDED}s"

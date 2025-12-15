@@ -1,27 +1,16 @@
-# Python 3.11 base image keeps parity with the recommended environment
-FROM python:3.11-slim
+FROM python:3.11
 
-# OS dependencies for building Python wheels (e.g., lightgbm) and pulling submodules
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        git \
-        libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+# Set working directory inside the container
+WORKDIR /workspace
 
-# Work from the repository root inside the image
-WORKDIR /workspace/Baleen
+# Install basic dependencies
+RUN apt-get update && apt-get install -y git bash && rm -rf /var/lib/apt/lists/*
 
-# Copy source and initialize the bundled submodule if present
-COPY . /workspace/Baleen
-RUN if [ -d .git ]; then git submodule update --init --recursive; fi
+# Copy all files in the current context to /workspace in container
+COPY . /workspace
 
-# Install Python dependencies needed to run the simulator and notebooks
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r BCacheSim/install/requirements.txt
+# Install Python dependencies if requirements.txt exists
+RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
-# Ensure Python can import the repository modules from anywhere
-ENV PYTHONPATH=/workspace/Baleen
-
-# Drop into a shell at the repository root by default
+# Default command to open a bash shell
 CMD ["/bin/bash"]

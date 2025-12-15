@@ -1,22 +1,30 @@
-FROM python:3.8-slim
+FROM python:3.6-slim
 
-# System dependencies for Python builds and the R stack used by rpy2/eva
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        r-base r-base-dev \
-        build-essential git wget ca-certificates && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install dependencies for conda and system
+RUN apt-get update && apt-get install -y \
+    wget \
+    bzip2 \
+    curl \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /workspace/flex
+# Install Miniconda
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    /bin/bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh
+ENV PATH=$CONDA_DIR/bin:$PATH
 
-# Install Python dependencies first for better build caching
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /app
 
-# Bring in the full repo
-COPY . .
+# Copy repository contents
+COPY . /app
 
-# Ensure the tool modules are on the Python path when you shell in
-ENV PYTHONPATH=/workspace/flex/tool:/workspace/flex/tool/src:${PYTHONPATH}
+# Create conda environment with Python 3.6 and install Python dependencies
+RUN conda create -n flex-env python=3.6 -y && \
+    /bin/bash -c "source $CONDA_DIR/etc/profile.d/conda.sh && conda activate flex-env && pip install -r requirements.txt"
 
+# Activate conda environment on container start
+SHELL ["/bin/bash", "-c"]
 CMD ["/bin/bash"]

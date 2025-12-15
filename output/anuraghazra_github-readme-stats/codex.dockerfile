@@ -1,12 +1,15 @@
-FROM node:22-slim
+FROM node:18
 
-WORKDIR /workspace
+WORKDIR /usr/src/app
 
-# Install JS dependencies using the lockfile for reproducibility
+# Copy package.json and package-lock.json first for better caching
 COPY package*.json ./
-RUN npm ci
 
-# Copy the full repository
+# Install dependencies
+RUN npm install
+
+# Copy all project files
 COPY . .
 
+# Default to interactive bash shell in repo root
 CMD ["/bin/bash"]

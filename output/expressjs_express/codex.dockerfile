@@ -1,16 +1,16 @@
-# Development image for the express repository
-FROM node:20-bookworm
+FROM node:18
 
-# Install dependencies into a writable app directory
 WORKDIR /usr/src/app
 
-# Install dependencies first for better layer caching
+# Copy package files separately to leverage Docker cache
 COPY package*.json ./
-RUN set -eux; \
-    npm install
 
-# Copy the rest of the repository
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the repository files
 COPY . .
 
-# Default to an interactive shell at the repo root
-CMD ["/bin/bash"]
+# Start container with bash shell at repo root
+ENTRYPOINT ["/bin/bash"]
+CMD [""]

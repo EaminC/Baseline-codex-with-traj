@@ -1,25 +1,16 @@
-# syntax=docker/dockerfile:1
-FROM rust:1.78-bullseye
+FROM rust:1.71
 
-# Build tooling commonly needed for Tokio development
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        pkg-config \
-        libssl-dev \
-        clang \
-        cmake \
-        ca-certificates \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+# Create app directory in container
+WORKDIR /app
 
-WORKDIR /workspace/tokio
+# Copy all files from current directory into container
+COPY . /app
 
-# Copy the repository into the image
-COPY . .
+# Build the Rust workspace in release mode
+RUN cargo build --release
 
-# Pre-fetch dependencies so the image is ready to build or test
-RUN cargo fetch --all-features
+# Set working directory for runtime
+WORKDIR /app
 
-# Drop into a shell at the repository root by default
+# Use bash as the default command
 CMD ["/bin/bash"]

@@ -1,8 +1,10 @@
 {
   "repo_name": "gluetest",
   "repo_url": "https://github.com/seal-research/gluetest",
-  "execution_start_time": "2025-12-14T19:03:59Z",
-  "execution_end_time": "2025-12-14T19:07:17Z",
-  "execution_duration_seconds": 197.70,
-  "codex_command_success": true
+  "execution_start_time": "2025-12-15T05:41:57Z",
+  "execution_end_time": "2025-12-15T05:42:25Z",
+  "execution_duration_seconds": 28.42,
+  "codex_command_success": true,
+  "model_specified": "gpt-4.1-mini",
+  "model_actual": "gpt-4.1-mini"
 }

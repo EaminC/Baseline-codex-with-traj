@@ -1,21 +1,12 @@
-# syntax=docker/dockerfile:1
+FROM rust:latest
 
-FROM rust:1.81-slim-bookworm
+WORKDIR /serde
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+# Copy entire repository to /serde in the container
+COPY . /serde
 
-# Use the faster sparse protocol when pulling crates.
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+# Build the entire cargo workspace in release mode
+RUN cargo build --release
 
-# Place the repository at the container root and compile the full workspace.
-WORKDIR /workspace/serde-rs_serde
-COPY . .
-RUN cargo build --workspace --all-targets --release
-
+# Set default command to start a bash shell
 CMD ["/bin/bash"]

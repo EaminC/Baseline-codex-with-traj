@@ -1,40 +1,27 @@
-FROM python:2.7
+FROM python:2.7-slim
 
-ENV LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
-
-WORKDIR /app
-
-# System deps: Java for ANTLR, bc for scripts, and compilers for building pystan/torch.
+# Install dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      openjdk-8-jre-headless \
-      openjdk-8-jdk-headless \
-      bc \
-      wget \
-      gfortran && \
+    apt-get install -y wget openjdk-8-jdk-headless bc && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy repository and install Python dependencies (Python 2 stack).
-COPY . /app
-RUN pip install --no-cache-dir \
-      antlr4-python2-runtime \
-      six \
-      astunparse \
-      ast \
-      pystan \
-      edward \
-      pyro-ppl==0.2.1 \
-      tensorflow==1.5.0 \
-      pandas && \
-    pip install --no-cache-dir \
-      http://download.pytorch.org/whl/cpu/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl && \
-    wget -O language/antlr/antlr-4.7.1-complete.jar \
-      http://www.antlr.org/download/antlr-4.7.1-complete.jar && \
-    cd language/antlr && \
-    bash ./run.sh && \
-    cd /app && \
-    python check.py
+# Set environment variables
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
-# Drop into a shell at the repo root by default.
+# Install required Python2 packages
+RUN pip install --no-cache-dir \
+    antlr4-python2-runtime six astunparse ast pystan edward pyro-ppl==0.2.1 tensorflow==1.5.0 pandas
+
+# Set work directory
+WORKDIR /app
+
+# Copy the current repo contents into the container
+COPY . /app
+
+# Download Antlr jar and generate parser code
+RUN wget -q http://www.antlr.org/download/antlr-4.7.1-complete.jar -P language/antlr/ && \
+    bash language/antlr/run.sh
+
 CMD ["/bin/bash"]

@@ -1,31 +1,28 @@
-# syntax=docker/dockerfile:1
+FROM ubuntu:latest
 
-FROM ubuntu:24.04
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        clang \
-        cmake \
-        git \
-        make \
-        pkg-config \
-        python3 \
+# Install required dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    python3 \
+    python3-pip \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/ponyc
+# Set working directory to repository root
+WORKDIR /root/ponyc
 
+# Copy current repository files into the container
 COPY . .
 
-ENV CC=clang \
-    CXX=clang++
+# Build the LLVM libraries (only needed once)
+RUN make libs
 
-RUN make libs build_flags="-j$(nproc)" \
-    && make configure \
-    && make build build_flags="-j$(nproc)" \
-    && make install
+# Configure the build
+RUN make configure
 
+# Build the compiler and runtime
+RUN make build
+
+# Set default shell to bash
 CMD ["/bin/bash"]
